@@ -1,3 +1,13 @@
+<?php 
+ 
+session_start();
+ 
+if (!isset($_SESSION['username'])) {
+    header("Location: login.php");
+}
+ 
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,13 +19,9 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="../../plugins/fontawesome-free/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   <!-- Theme style -->
   <link rel="stylesheet" href="../../dist/css/adminlte.min.css">
-  <?php
-    $koneksi  = mysqli_connect("localhost", "root", "", "pweb");
-    $reason   = mysqli_query($koneksi, "SELECT reason FROM data");
-    $value    = mysqli_query($koneksi, "SELECT value FROM data");
-  ?>
 </head>
 <body class="hold-transition sidebar-mini">
 <div class="wrapper">
@@ -195,14 +201,22 @@
         <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
           <!-- Add icons to the links using the .nav-icon class
                with font-awesome or any other icon font library -->
-       
-            <a href="main.html" class="nav-link active">
+          <li>
+            <a href="index.php" class="nav-link active">
               <i class="nav-icon fas fa-tachometer-alt"></i>
               <p>
                 Dashboard
               </p>
             </a>
-           
+          </li>
+            <a href="logout.php" class="nav-link">
+              <i class="fa fa-sign-out"></i>
+              <p>
+                Logout
+              </p>
+            </a>
+        </ul>
+      </nav>
       <!-- /.sidebar-menu -->
     </div>
     <!-- /.sidebar -->
@@ -269,16 +283,18 @@
                   </thead>
                   <tbody>
                     <?php 
+                      include 'connection.php';
                       $no = 1;
-                      $data = mysqli_query($connection,"select * from data");
-                      while($d=mysqli_fetch_array($data)){
-                        ?>
-                        <tr>
-                          <td><?php echo $no++; ?></td>
-                          <td><?php echo $d['reason']; ?></td>
-                          <td><?php echo $d['value']; ?></td>
-                        </tr>
-                        <?php 
+                      $result = mysqli_query($conn, "SELECT * FROM reason_list");
+                      $reason = array();
+                      $value = array();
+                      while($row = mysqli_fetch_array($result)) {
+                        array_push( $reason, $row['reason'] );
+                        array_push( $value, $row['value'] );
+                        echo "<td>" . $no++ . "</td>";
+                        echo "<td>" . $row['reason'] . "</td>";
+                        echo "<td>" . $row['value'] . "</td>";
+                        echo "</tr>";
                       }
                     ?>
                   </tbody>
@@ -337,6 +353,9 @@
 <script src="../../plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
 
 <script>
+  var reason = <?php echo json_encode($reason) ?>;
+  var value = <?php echo json_encode($value) ?>;
+  // console.log(reason);
   $(function () {
     /* ChartJS
      * -------
@@ -349,12 +368,13 @@
 
     // Get context with jQuery - using jQuery's .get() method.
     var areaChartCanvas = $('#barChart').get(0).getContext('2d')
-
+    
     var areaChartData = {
-      labels  : ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-      datasets: [
+     
+      labels  : reason,
+      datasets: [ 
         {
-          label               : 'Digital Goods',
+          label               : 'Reason List',
           backgroundColor     : 'rgba(60,141,188,0.9)',
           borderColor         : 'rgba(60,141,188,0.8)',
           pointRadius          : false,
@@ -362,19 +382,8 @@
           pointStrokeColor    : 'rgba(60,141,188,1)',
           pointHighlightFill  : '#fff',
           pointHighlightStroke: 'rgba(60,141,188,1)',
-          data                : [28, 48, 40, 19, 86, 27, 90]
-        },
-        {
-          label               : 'Electronics',
-          backgroundColor     : 'rgba(210, 214, 222, 1)',
-          borderColor         : 'rgba(210, 214, 222, 1)',
-          pointRadius         : false,
-          pointColor          : 'rgba(210, 214, 222, 1)',
-          pointStrokeColor    : '#c1c7d1',
-          pointHighlightFill  : '#fff',
-          pointHighlightStroke: 'rgba(220,220,220,1)',
-          data                : [65, 59, 80, 81, 56, 55, 40]
-        },
+          data                : value
+        }
       ]
     }
 
@@ -383,10 +392,10 @@
     //-------------
     var barChartCanvas = $('#barChart').get(0).getContext('2d')
     var barChartData = $.extend(true, {}, areaChartData)
-    var temp0 = areaChartData.datasets[0]
-    var temp1 = areaChartData.datasets[1]
-    barChartData.datasets[0] = temp1
-    barChartData.datasets[1] = temp0
+    var temp = areaChartData.datasets
+    // var temp1 = areaChartData.datasets
+    // barChartData.datasets = temp1
+    barChartData.datasets = temp
 
     var barChartOptions = {
       responsive              : true,
